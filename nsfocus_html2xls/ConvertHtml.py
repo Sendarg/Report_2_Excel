@@ -208,4 +208,4 @@ for dir in os.listdir(os.getcwd()):
 			outFile = dir + ".xlsx"
 			# 单 sheet 保存？
 			wb.save(outFile)
-			print "[== Save as %s]\n" % outFile
+			print "[ Save as %s]\n" % outFile
