@@ -18,7 +18,7 @@ def task2sheet(WookBk, SingleTaskPath):
 	
 	## set task name as sheet name
 	# get task name !!!! task name between _ don't have any excel not like char like [ ]
-	names = SingleTaskPath.decode('gb2312').split('/')
+	names = SingleTaskPath.decode('utf-8').split('/')
 	task = sheetname = names[0]
 	sheet = WookBk.create_sheet(sheetname)
 	titles = [u"任务",
@@ -120,6 +120,12 @@ def task2sheet(WookBk, SingleTaskPath):
 					td = tr.xpath('./td')[0]
 					# print IP, th
 					data[th] = get_pure_text(td)
+				
+				# some replace fix
+				if data[u"端口号"] == "--":
+					data[u"端口号"] = "0"
+				if data[u"服务"] == "--":
+					data[u"服务"] = ""
 				
 				# write down to excel sheet
 				line = [data[u"任务"],
