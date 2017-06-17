@@ -9,18 +9,28 @@ import lxml.html as H
 from openpyxl import Workbook
 
 
-def task2sheet(WookBk, SingleTaskPath):
+def SingleTask2sheet(WookBk, SingleTaskPath,SingleSheet=1):
 	# get all absolute file path in TaskPath
-	iphtmls = glob.glob(SingleTaskPath + '/host/*.html')
+	iphtmls = glob.glob(SingleTaskPath + '/host/*.*.*.*.html')
 	if not len(iphtmls):
 		print "---- Path has Nothing:\t%s" % SingleTaskPath
 		return None
 	
+	# makesheet
+	SingleSheetName="report"
 	## set task name as sheet name
 	# get task name !!!! task name between _ don't have any excel not like char like [ ]
-	names = SingleTaskPath.decode('utf-8').split('/')
-	task = sheetname = names[0]
-	sheet = WookBk.create_sheet(sheetname)
+	task = SingleTaskPath.decode('utf-8').split('/')[0]
+	
+	if SingleSheet:
+		if SingleSheetName in WookBk.sheetnames:
+			sheet = WookBk.get_sheet_by_name(SingleSheetName)
+		else:
+			sheet = WookBk.create_sheet(SingleSheetName)
+	else:
+		sheet = WookBk.create_sheet(task)
+	
+	
 	titles = [u"任务",
 	          u"IP地址",
 	          u"NSFOCUS",
@@ -157,7 +167,7 @@ def task2sheet(WookBk, SingleTaskPath):
 				sheet.append(line)
 		
 		print "IP:\t%s is done" % iphtml
-	print  "Sheet:\t%s is done" % sheetname
+	print  "Sheet:\t%s is done" % sheet.title
 	return True
 
 
@@ -210,7 +220,7 @@ for dir in os.listdir(os.getcwd()):
 		# get all task dir in a store file
 		print "[ Working on " + dir + " :]"
 		# taskpath = os.path.abspath(dir)
-		if task2sheet(wb, dir):
+		if SingleTask2sheet(wb, dir):
 			outFile = dir + ".xlsx"
 			# 单 sheet 保存？
 			wb.save(outFile)
