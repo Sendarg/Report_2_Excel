@@ -1,0 +1,30 @@
+neXCSer - Nessus Report Parser
+==============================
+
+Copyright(c) 2010, Robin Wood <robin@digininja.org>
+
+neXCSer was originally going to be a way to allow multiple auditors to merge their Nessus results into a single file that could then be parsed through by hand or in a spreadsheet to help with further testing or report writing, however once I started writing it I realised that it could help more than that by allowing different sections of the results file to be broken down into their own parts.
+
+Version 1 of the app creates two CSV files, a summary of the machines scanned and a detailed report containing all the rest of the information from the scan. The plan going forward is to take data such as the output from plugin 10395, SMB Shares Enumeration, which shows all the shares available on the machines, and create a CSV file containing just the machine names/IPs and their shares. Or output from 10860, SMB use host SID to enumerate local users, and create a list of all users on all machines.
+
+I'm releasing this version now without these extra breakdowns for two reasons, one, to get some testing done on it, to make sure the base XML parser is working correctly, and two, to get some feedback on which plugins people would like to see broken down into their own reports. Along with the testers at RandomStorm I have ideas on which I'd like to see but as with most things, ask the community and the ideas bank swells. For any feedback drop me an email.
+
+Usage
+=====
+First a warning, neXCSer will only work with Nessus v2 report files, as far as I know this format was introduced with Nessus version 4.2 (the web/flash app version), if you are running an older version of this see below for information on how to convert your reports.
+
+Usage is fairly simple, run the script with the Nessus file as a parameter and you will get back two files, summary.csv and detail.csv. There is also a selection of parameters which let you change the output file names and specify which ones are created, run with --help to get this list.
+ Converting Nessus 1 to Nessus 2
+
+I've found the easiest way to do this is to open the old report in Nessus 4.2 and then re-save it out. As far as I can tell the new style contains more information and so the result you get from parsing this new file will contain less data than you would get from a straight new style report, particularly the summary report usually just ends up as a list of IP addresses. 
+
+Ruby Doc
+========
+neXCSer is commented up in Ruby Doc format.
+
+Licence
+=======
+This project released under the Creative Commons Attribution-Share Alike 2.0
+UK: England & Wales
+
+( http://creativecommons.org/licenses/by-sa/2.0/uk/ )
