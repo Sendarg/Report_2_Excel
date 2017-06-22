@@ -1,0 +1,40 @@
+jq  '.data.report.targets[]|{ip,vport:.vuln_scanned[]}|
+
+.ip+"\t"+(.vport.vul_id|tostring)+"\t"+(.vport.port|tostring)+"\t"+.vport.protocol+"\t"+.vport.service+"\t"+.vport.mess_string' 
+
+.ip+"\t"+
+
+
+
+jq  '.data.report.targets[]|{ip,v:.vuln_detail[]}|
+
+
+[.ip.v.application_category,.v.cve_id,.v.description,.v.name,(.v.risk_points|tostring),.v.solution,.v.threat_category,(.v.vul_id|tostring)]
+
+
+ipid:(.ip+"-"+(.v.vul_id|tostring)),ip,v
+
+
+jq  '.data.report.targets[]
+|[{ip,v:.vuln_scanned[]}]|sort_by(.v.vul_id)|.[]
+
+|{ipid:(.ip+"-"+(.v.vul_id|tostring)),ip,v}'
+
+
+* 加乘 必须{}，不能是array
+ array ([{"k":"天�...) and array ([{"k":"天�...) cannot be multiplied
+
+
+|join("---")' 会字符串处理，\n解析为换号而不是符号
+
+
+jq '[.ip,.v[]]|@csv' -r all.txt > out2.csv
+
+enca -x gb18030 out1.csv
+gbk
+gb2312都ok
+jq -a 无效
+
+
+
+-r 983_天津_BOMC_神州泰岳_亚信_系统漏洞扫描.json  > port.txt
