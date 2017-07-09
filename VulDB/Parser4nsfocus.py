@@ -9,7 +9,7 @@ from db import MetaData
 import linecache
 
 
-def GetVulDetails(SingleTaskPath):
+def GetNsfocusVulDetails(SingleTaskPath):
 	# get all absolute file path in TaskPath
 	iphtmls = glob.glob(SingleTaskPath + '/host/*.*.*.*.html')
 	if not len(iphtmls):

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # version 0.1 update by le @ 2017.7.6
 
-import os, datetime, argparse
+import argparse
 from argparse import RawTextHelpFormatter
 from db import MetaData, DBO
 from openpyxl import load_workbook
@@ -20,11 +20,8 @@ def template_tj(TaskID, OutputFileName):
 		c[0].value = ""  # delete for quickly # empty headers, can't remove line use openpyxl
 	# todo : more details
 	'''
-	输出添加：
-		部门名称、业务系统名称
-			修改数据输出接口，更多数据
-			
-	
+	further:整体添加：
+		部门名称、应用系统名称、主机信息
 	'''
 	i = 0  # auto line number
 	for v in DBO().enum_vul(TaskID,
