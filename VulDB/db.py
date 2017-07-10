@@ -8,51 +8,61 @@ from py2neo import Graph, Node, Relationship, NodeSelector
 class MetaData(object):
 	def __init__(self):
 		self.data = {
+			## 1、结构定义+完善修改；2、保留更多原始元数据；
 			# task
 			u"TaskID": "",  # 唯一任务ID，导入导出用，检查不可重复
-			u"扫描器": "",
+			u"Scanner": "",
 			# attrib
-			u"任务时间": "",
+			u"任务时间": "",  # HOST_START
+			u"结束时间": "",  # HOST_END
 			u"报告名称": "",  # nessus-reportname:"",nsfocus-taskname
+			# HOST
+			u"OS类型": "",  # linux windows
+			u"OS": "",  # detail platform version
 			# vul details
 			u"ID": "",  # 唯一ID:"",nsfocus-vulid:"",nessus-
 			u"IP": "",
 			u"详细描述": "",  # description
-			u"CVE编号": "",  # cve
 			u"应用": "",
 			u"解决办法": "",  # solution
-			u"威胁类别": "",
-			u"威胁分值": "",
+			u"威胁类别": "",	# plugin_type
 			u"漏洞名称": "",  # name:"",pluginName
-			u"BUGTRAQ": "",
 			u"端口返回": "",  # plugin_output
 			u"协议": "",  # protocol:"",
-			u"服务": "",
-			u"端口": "",  # port
-			u"等级": "",  # severity:"漏洞等级",
+			u"服务": "", # svc_name
+			u"Port": "",  # port
+			u"等级": "",  # risk_factor:"漏洞等级",
+			# more details
 			u"发现日期": "",  # vuln_publication_date
+			u"CVE编号": "",  # cve
+			u"CVSS评分": "",  # cvss_base_score
+			# only nsfocus
+			u"威胁分值": "",
 			u"危险插件": "",
 			u"CNVD编号": "",
 			u"CNNVD编号": "",
 			u"CNCVE编号": "",
-			u"CVSS评分": "",  # cvss_base_score
-			# mark-add
-			u"误报": "",  # 常见经验:是不是误报
-			u"误报原因": "",  # 常见误报原因:oracle:\ssh:\
-			# nsfoucs
 			u"vulid": "",
 			u"NSFOCUS": "",
 			u"plgid": "",
-			# todo: review for all attrib in nessus
-			u"svc_name": "",
-			u"bid": "",
+			u"BUGTRAQ": "",
+			# only nessus
+			u"CVSS3评分": "",  # cvss3_base_score
 			u"pluginID": "",
 			u"pluginFamily": "",
 			u"plugin_publication_date": "",
 			u"plugin_version": "",
 			u"see_also": "",
 			u"synopsis": "",
+			u"检测脚本": "",
+			u"metasploit": "",
 			u"xref": "",
+			u"bid": "",
+			u"osvdb": "",
+			# mark-add
+			u"误报": "",  # 常见经验:是不是误报
+			u"误报原因": "",  # 常见误报原因:oracle:\ssh:\ add further
+			
 		}
 
 
@@ -67,25 +77,22 @@ class DBO(object):
         :param condition: .where("_.name =~ 'J.*'", "1960 <= _.born < 1970"); "_.Port='%s'"
         :return: :py:list
         """
-		selector = NodeSelector(self.graph)
 		if Cypher_Conditions:
 			# selector.select.where not good for use , not support zh_cn just pure cypher
-			cypher = 'MATCH (n:HostVul) where n.TaskID="07091" and %s RETURN n ' % Cypher_Conditions
+			cypher = 'MATCH (n:HostVul) where n.TaskID="%s" and %s RETURN n ' % (TaskID,Cypher_Conditions)
 			for data in self.graph.data(cypher):
 				yield data["n"]
 		else:
+			selector = NodeSelector(self.graph)
 			selected = selector.select("HostVul", TaskID=TaskID)
 			for data in list(selected):
 				yield data
 	
-	def add_vul(self, Department, Vul_Data):
-		Host_IP = Vul_Data[u"IP"]
-		if not self.graph.find_one("Host", "IP", Host_IP):
-			self.add_host(Department, Host_IP)
-		
-		# uniq = Vul_Data[u"IP"] + "^^^" + Vul_Data[u"端口"] + "^^^" + Vul_Data[u"ID"]
-		if len(self.HostVul_exists(Vul_Data)) == 0:
-			Host = self.graph.find_one("Host", "IP", Host_IP)
+	def add_vul(self, Vul_Data):
+		# uniq = Vul_Data[u"IP"] + "^^^" + Vul_Data[u"Port"] + "^^^" + Vul_Data[u"ID"]
+		# if not self.HostVul_exists(Vul_Data):
+		if not self.HostVul_exists(Vul_Data):
+			Host = self.graph.find_one("Host", "IP", Vul_Data[u"IP"])
 			vul = Node("HostVul")
 			vul.update(Vul_Data)
 			rel = Relationship(Host, "have", vul)
@@ -96,13 +103,25 @@ class DBO(object):
 			pass
 	
 	def HostVul_exists(self, Vul_Data):
-		selector = NodeSelector(self.graph)
-		selected = selector.select("HostVul", IP=Vul_Data[u"IP"], Port=Vul_Data[u"端口"], ID=Vul_Data[u"ID"])
+		cypher = "Match (n:HostVul) where n.TaskID='%s' and n.Scanner='%s' and n.IP='%s' and n.Port='%s' and n.ID='%s' return n.IP limit 1 " % (
+			Vul_Data[u"TaskID"],
+			Vul_Data[u"Scanner"],
+			Vul_Data[u"IP"],
+			Vul_Data[u"Port"],
+			Vul_Data[u"ID"])
+		result = self.graph.data(cypher)
+		# 性能太差，使用其他简单方法
+		# selector = NodeSelector(self.graph)
+		# selected = selector.select("HostVul",
+		#                            TaskID=Vul_Data[u"TaskID"],
+		#                            Scanner=Vul_Data[u"Scanner"],
+		#                            IP=Vul_Data[u"IP"],
+		#                            Port=Vul_Data[u"Port"],
+		#                            ID=Vul_Data[u"ID"]).limit(1)
 		# .where("_.IP = '%s'" % Vul_Data[u"IP"],
-		#                                        "_.Port='%s'" % Vul_Data[u"端口"],
+		#                                        "_.Port='%s'" % Vul_Data[u"Port"],
 		#                                        "_.ID='%s'" % Vul_Data[u"ID"])
-		vul = list(selected)
-		return vul
+		return result
 	
 	def add_host(self, Department, host):
 		self.node_simple_add("Host", "IP", host)
@@ -122,7 +141,7 @@ class DBO(object):
 	def node_exists(self, label, Key, Value):
 		Find = self.graph.find_one(label, property_key=Key, property_value=Value)
 		if Find:
-			print "Node %s already exists" % Find[Key]
+			print "Node already exists: [%s: %s]" % (label, Find[Key])
 			return 2
 		else:
 			return 0
@@ -130,7 +149,7 @@ class DBO(object):
 	def node_simple_add(self, label, Key, Value):
 		Find = self.graph.find_one(label, property_key=Key, property_value=Value)
 		if Find:
-			print "Node %s already exists" % Find[Key]
+			print "Node already exists: [%s: %s]" % (label, Find[Key])
 			return 2
 		else:
 			n = Node(label)

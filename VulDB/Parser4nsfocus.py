@@ -5,17 +5,18 @@
 import glob, urllib2
 import os.path as P
 import lxml.html as H
-from db import MetaData
+from db import MetaData,DBO
 import linecache
 
 
-def GetNsfocusVulDetails(SingleTaskPath):
+def GetNsfocusVulDetails(Department,SingleTaskPath):
 	# get all absolute file path in TaskPath
 	iphtmls = glob.glob(SingleTaskPath + '/host/*.*.*.*.html')
 	if not len(iphtmls):
-		msg="---- Path has Nothing:\t%s" % SingleTaskPath
+		msg="---- Path has Nothing:\t%s Change directory..." % SingleTaskPath
 		print msg
-		raise(msg)
+		SingleTaskPath=glob.glob(SingleTaskPath+'/*_html')[0]
+		iphtmls = glob.glob(SingleTaskPath + '/host/*.*.*.*.html')
 	
 	#get scanner task info
 	index = glob.glob(SingleTaskPath + '/index.html')[0]
@@ -29,11 +30,12 @@ def GetNsfocusVulDetails(SingleTaskPath):
 		if IPfile.count('.') == 4:
 			# ippath=P.join(taskpath,iphtml)
 			IP = IPfile[:-5]
-			
+			#
+			DBO().add_host(Department,IP)
 			## get html content
 			content = urllib2.urlopen(url="file:" + iphtml).read()
 			html = H.fromstring(content.decode('utf-8'))
-			
+			## todo:get more data from html
 			# VulTable = html.xpath('//*[@id="vul_detail"]/table/tr')
 			vul_trs = html.xpath('//*[@id="vul_detail"]/table/tr')
 			count = len(vul_trs) / 2
@@ -50,7 +52,7 @@ def GetNsfocusVulDetails(SingleTaskPath):
 				
 				# get basic Data from html <title>
 				data[u"ID"]=data[u"vulid"] = vul_trs[title_index].attrib["data-id"]  # nsfocus defined uniqe ID
-				data[u"端口"] = vul_trs[title_index].attrib["data-port"]
+				data[u"Port"] = vul_trs[title_index].attrib["data-port"]
 				Level = vul_trs[title_index].xpath('./td/img[2]')[0]
 				data[u"等级"] = Level.attrib["src"].split("/")[3][5:-4]
 				data[u"漏洞名称"] = vul_trs[title_index].xpath('./td/span')[0].text
@@ -62,7 +64,7 @@ def GetNsfocusVulDetails(SingleTaskPath):
 				else:
 					data[u"端口返回"] = ""
 				PortInfo = html.xpath('//*[@data-id="%s"]/../../../../../td' % data["vulid"])
-				data[u"端口"] = PortInfo[0].text
+				data[u"Port"] = PortInfo[0].text
 				data[u"协议"] = PortInfo[1].text
 				data[u"服务"] = PortInfo[2].text
 				
@@ -79,11 +81,17 @@ def GetNsfocusVulDetails(SingleTaskPath):
 				
 				data.update(table)
 				# some replace fix
-				if data[u"端口"] == "--":
-					data[u"端口"] = "0"
+				if data[u"Port"] == "--":
+					data[u"Port"] = "0"
 				if data[u"服务"] == "--":
 					data[u"服务"] = ""
-				
+				if data[u"等级"] =="low":
+					data[u"等级"]="Low"
+				elif data[u"等级"] =="middle":
+					data[u"等级"]="Medium"
+				if data[u"等级"] == "high":
+					data[u"等级"] = "High"
+					
 				yield data
 		print "IP:\t%s is done" % iphtml
 

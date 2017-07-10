@@ -19,12 +19,13 @@ def import_nsfoucs(ReportFiles, TaskID, Project, Department, Application):
 			tmp = tempfile.mkdtemp(".tmp", "nsfocus_")  # 创建唯一的临时文件，避免冲突
 			zipfile.ZipFile(zip).extractall(path=tmp)
 			# taskpath = os.path.abspath(dir)
-			for data in GetNsfocusVulDetails(tmp):
+			for data in GetNsfocusVulDetails(Department,tmp):
 				# add more meta info
 				data[u"TaskID"] = TaskID.strip()
-				data[u"扫描器"] = "nsfocus"
+				data[u"Scanner"] = "nsfocus"
 				# store data
-				dbo.add_vul(Department, data)
+				dbo.add_vul(data)
+			print "nsfocus Report done:\t%s" % zip.name
 			shutil.rmtree(tmp)
 	print "[ Store complete! ]"
 
@@ -36,12 +37,13 @@ def import_nessus(ReportFiles, TaskID, Project, Department, Application):
 	for xml in ReportFiles:
 		print "[ Working on\t %s ]" % xml.name
 		# taskpath = os.path.abspath(dir)
-		for data in GetNessusVulDetails(xml):
+		for data in GetNessusVulDetails(Department, xml):
 			# add more meta info
 			data[u"TaskID"] = TaskID.strip()
-			data[u"扫描器"] = "nessus"
+			data[u"Scanner"] = "nessus"
 			# store data
-			dbo.add_vul(Department, data)
+			dbo.add_vul(data)
+		print "nessus Report done:\t%s" % xml.name
 	print "[ Store complete! ]"
 
 
@@ -62,10 +64,10 @@ if __name__ == '__main__':
 	parser.add_argument("--nsfocus", dest="Nsfocus", type=file, nargs="+",
 	                    help="Support nsfocus export html format file: _html.zip")
 	args = parser.parse_args()
+	
+	if not (args.Nessus or args.Nsfocus):
+		print "== Please at least special one scanner report type and file"
 	if args.Nessus:
 		import_nessus(args.Nessus, args.TaskID, args.Project, args.Department, args.App)
-	elif args.Nsfocus:
+	if args.Nsfocus:
 		import_nsfoucs(args.Nsfocus, args.TaskID, args.Project, args.Department, args.App)
-	
-	else:
-		print "== Please at least special one scanner report type and file"

@@ -8,7 +8,7 @@ from db import MetaData, DBO
 from openpyxl import load_workbook
 
 
-def template_tj(TaskID, OutputFileName):
+def template_tj(TaskID, Scanner, OutputFileName):
 	wb = load_workbook("template_tj.xlsx")
 	sheet = wb.active
 	if not OutputFileName:
@@ -20,12 +20,14 @@ def template_tj(TaskID, OutputFileName):
 		c[0].value = ""  # delete for quickly # empty headers, can't remove line use openpyxl
 	# todo : more details
 	'''
-	further:整体添加：
+	整体修改：
 		部门名称、应用系统名称、主机信息
 	'''
 	i = 0  # auto line number
-	for v in DBO().enum_vul(TaskID,
-	                        'n.等级<>"None" and not n.解决办法 =~ ".*可以不做?修复.*" and n.解决办法 <>"" and tofloat(n.CVSS评分)>=1'):
+	condition = 'n.等级<>"None" and not n.解决办法 =~ ".*可以不做?修复.*" and n.解决办法 <>""'
+	if Scanner:
+		condition = 'n.Scanner="%s" and n.等级<>"None" and not n.解决办法 =~ ".*可以不做?修复.*" and n.解决办法 <>""' % Scanner
+	for v in DBO().enum_vul(TaskID, condition):
 		line = []
 		i += 1
 		for c in headers:
@@ -43,11 +45,13 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='''
     Export template data to file.
     ''', formatter_class=RawTextHelpFormatter)
-	
 	parser.add_argument("-c", dest="Columns", action='store_true',
 	                    help="Print support data key, Use in excel Columns for user defined template.")
 	parser.add_argument("-t", dest="TaskID", type=str,
 	                    help="Unique TaskID for identify task and export.")
+	# further todo:add more:department\app
+	parser.add_argument("-s", dest="Scanner", type=str, choices=["nessus", "nsfocus"],
+	                    help="Select one scanner results.")
 	parser.add_argument("-p", dest="Template", type=str, choices=["tj"],
 	                    help="Export some data to predefine templates")
 	parser.add_argument("-o", dest="OutputFileName", type=str,
@@ -55,8 +59,10 @@ if __name__ == '__main__':
 	
 	args = parser.parse_args()
 	if args.Columns:
-		for i in MetaData().data:
+		cols = MetaData().data.keys()
+		cols.sort()
+		for i in cols:
 			print i
 	if args.Template == "tj":
-		template_tj(args.TaskID, args.OutputFileName)
+		template_tj(args.TaskID, args.Scanner, args.OutputFileName)
 	# print "==== Save to file %s."%(args.FileName+".xlsx")
