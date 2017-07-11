@@ -171,13 +171,6 @@ def SingleTask2sheet(WookBk, SingleTaskPath,SingleSheet=1):
 	return True
 
 
-def get_task_name():
-	# for now,different report dir process to diff excel sheet
-	# todo:get full task name from index.html,how to marge them to 1 single sheet like jq does
-	#
-	pass
-
-
 def get_pure_text(xpathElement):
 	# get text from td , remove other html label
 	if xpathElement.findall("a"):  # only a like

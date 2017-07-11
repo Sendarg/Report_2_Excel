@@ -9,7 +9,7 @@ from db import MetaData,DBO
 import linecache
 
 
-def GetNsfocusVulDetails(Department,SingleTaskPath):
+def GetNsfocusVulDetails(Application,SingleTaskPath):
 	# get all absolute file path in TaskPath
 	iphtmls = glob.glob(SingleTaskPath + '/host/*.*.*.*.html')
 	if not len(iphtmls):
@@ -31,7 +31,7 @@ def GetNsfocusVulDetails(Department,SingleTaskPath):
 			# ippath=P.join(taskpath,iphtml)
 			IP = IPfile[:-5]
 			#
-			DBO().add_host(Department,IP)
+			DBO().add_host(Application,IP)
 			## get html content
 			content = urllib2.urlopen(url="file:" + iphtml).read()
 			html = H.fromstring(content.decode('utf-8'))
@@ -76,8 +76,6 @@ def GetNsfocusVulDetails(Department,SingleTaskPath):
 					td = tr.xpath('./td')[0]
 					# print IP, th
 					table[th] = get_pure_text(td)
-				# todo: mapping data,change header to eng for selector
-				
 				
 				data.update(table)
 				# some replace fix

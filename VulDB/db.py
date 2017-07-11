@@ -25,11 +25,11 @@ class MetaData(object):
 			u"详细描述": "",  # description
 			u"应用": "",
 			u"解决办法": "",  # solution
-			u"威胁类别": "",	# plugin_type
+			u"威胁类别": "",  # plugin_type
 			u"漏洞名称": "",  # name:"",pluginName
 			u"端口返回": "",  # plugin_output
 			u"协议": "",  # protocol:"",
-			u"服务": "", # svc_name
+			u"服务": "",  # svc_name
 			u"Port": "",  # port
 			u"等级": "",  # risk_factor:"漏洞等级",
 			# more details
@@ -61,7 +61,8 @@ class MetaData(object):
 			u"osvdb": "",
 			# mark-add
 			u"误报": "",  # 常见经验:是不是误报
-			u"误报原因": "",  # 常见误报原因:oracle:\ssh:\ add further
+			u"误报类型": "",  # 常见误报:oracle:\ssh:\ add further
+			u"误报原因": "",  # 版本错误，识别错误等
 			
 		}
 
@@ -71,6 +72,15 @@ class DBO(object):
 	def __init__(self):
 		self.graph = Graph(user='neo4j', password='neoXX00')
 	
+	def list_organization_structure(self, Application=None, HostIP=None):
+		condition = "where 1=1"
+		if Application:
+			condition += ' and a.Name="%s"' % Application
+		if HostIP:
+			condition += ' and n.IP="%s"' % HostIP
+		cypher = 'MATCH (p:Project)-[]-(d:Department)-[]-(a:Application)-[]-(n:Host) %s RETURN p.name as Project,d.name as Department,a.name as Application' % condition
+		return self.graph.data(cypher)
+	
 	def enum_vul(self, TaskID, Cypher_Conditions=None):
 		""" enum vul by condition.
         :param labels: node labels to match
@@ -79,7 +89,7 @@ class DBO(object):
         """
 		if Cypher_Conditions:
 			# selector.select.where not good for use , not support zh_cn just pure cypher
-			cypher = 'MATCH (n:HostVul) where n.TaskID="%s" and %s RETURN n ' % (TaskID,Cypher_Conditions)
+			cypher = 'MATCH (n:HostVul) where n.TaskID="%s" %s RETURN n ' % (TaskID, Cypher_Conditions)
 			for data in self.graph.data(cypher):
 				yield data["n"]
 		else:
@@ -123,11 +133,11 @@ class DBO(object):
 		#                                        "_.ID='%s'" % Vul_Data[u"ID"])
 		return result
 	
-	def add_host(self, Department, host):
+	def add_host(self, Application, host):
 		self.node_simple_add("Host", "IP", host)
 		host = self.graph.find_one("Host", "IP", host)
-		dep = self.graph.find_one("Department", "name", Department)
-		self.rel_simple_add(dep, "own", host)
+		app = self.graph.find_one("Application", "name", Application)
+		self.rel_simple_add(app, "own", host)
 	
 	def add_department(self, Project, Department):
 		self.node_simple_add("Project", "name", Project)
@@ -135,7 +145,20 @@ class DBO(object):
 		
 		pro = self.graph.find_one("Project", property_key="name", property_value=Project)
 		dep = self.graph.find_one("Department", property_key="name", property_value=Department)
+		
 		self.rel_simple_add(pro, "own", dep)
+	
+	def add_app(self, Project, Department, Application):
+		self.node_simple_add("Project", "name", Project)
+		self.node_simple_add("Department", "name", Department)
+		self.node_simple_add("Application", "name", Application)
+		
+		pro = self.graph.find_one("Project", property_key="name", property_value=Project)
+		dep = self.graph.find_one("Department", property_key="name", property_value=Department)
+		app = self.graph.find_one("Application", property_key="name", property_value=Application)
+		
+		self.rel_simple_add(pro, "own", dep)
+		self.rel_simple_add(dep, "own", app)
 	
 	### meta operate
 	def node_exists(self, label, Key, Value):

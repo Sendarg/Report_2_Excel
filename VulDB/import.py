@@ -12,14 +12,15 @@ import zipfile, tempfile, argparse, shutil
 def import_nsfoucs(ReportFiles, TaskID, Project, Department, Application):
 	dbo = DBO()
 	# dbo.graph.delete_all()
-	dbo.add_department(Project, Department)
+	# dbo.add_department(Project, Department)
+	dbo.add_app(Project, Department,Application)
 	for zip in ReportFiles:
 		if zipfile.is_zipfile(zip):
 			print "[ Working on\t %s ]" % zip.name
 			tmp = tempfile.mkdtemp(".tmp", "nsfocus_")  # 创建唯一的临时文件，避免冲突
 			zipfile.ZipFile(zip).extractall(path=tmp)
 			# taskpath = os.path.abspath(dir)
-			for data in GetNsfocusVulDetails(Department,tmp):
+			for data in GetNsfocusVulDetails(Application,tmp):
 				# add more meta info
 				data[u"TaskID"] = TaskID.strip()
 				data[u"Scanner"] = "nsfocus"
@@ -33,11 +34,11 @@ def import_nsfoucs(ReportFiles, TaskID, Project, Department, Application):
 def import_nessus(ReportFiles, TaskID, Project, Department, Application):
 	dbo = DBO()
 	# dbo.graph.delete_all()
-	dbo.add_department(Project, Department)
+	dbo.add_app(Project, Department, Application)
 	for xml in ReportFiles:
 		print "[ Working on\t %s ]" % xml.name
 		# taskpath = os.path.abspath(dir)
-		for data in GetNessusVulDetails(Department, xml):
+		for data in GetNessusVulDetails(Application, xml):
 			# add more meta info
 			data[u"TaskID"] = TaskID.strip()
 			data[u"Scanner"] = "nessus"
@@ -49,13 +50,13 @@ def import_nessus(ReportFiles, TaskID, Project, Department, Application):
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='''
-    import many vul scanner data to core database.
+    Import many vul scanner report data to core database.
     ''', formatter_class=RawTextHelpFormatter)
 	parser.add_argument("-p", dest="Project", type=str, default="tj.cmcc",
 	                    help="Report belong to which project")
-	parser.add_argument("-d", dest="Department", type=str, default="noname",
+	parser.add_argument("-d", dest="Department", type=str, default="",
 	                    help="Report belong to which department")
-	parser.add_argument("-a", dest="App", type=str, default="noname",
+	parser.add_argument("-a", dest="App", type=str, default="",
 	                    help="Report belong to which application system")
 	parser.add_argument("-t", dest="TaskID", type=str,
 	                    help="Unique TaskID for identify task and export.")
@@ -67,6 +68,7 @@ if __name__ == '__main__':
 	
 	if not (args.Nessus or args.Nsfocus):
 		print "== Please at least special one scanner report type and file"
+		print parser.print_usage()
 	if args.Nessus:
 		import_nessus(args.Nessus, args.TaskID, args.Project, args.Department, args.App)
 	if args.Nsfocus:

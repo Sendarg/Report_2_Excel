@@ -7,34 +7,48 @@ from argparse import RawTextHelpFormatter
 from db import MetaData, DBO
 from openpyxl import load_workbook
 
+Filters = {}
+Filters["all"] = ''
+Filters["default"] = 'and n.等级<>"None" and n.解决办法 <>""'
+# todo:mark false negative vuls # ssh\Oracle\NTP # use value in vul node key
+Filters["no_false_negative"] = 'and n.等级<>"None" and n.解决办法 <>"" and not n.解决办法 =~ ".*可以不做?修复.*"'
+Filters["high_risk"] = 'and not n.等级 in ["None","Low"] and n.解决办法 <>""'
 
-def template_tj(TaskID, Scanner, OutputFileName):
-	wb = load_workbook("template_tj.xlsx")
-	sheet = wb.active
+# org_structure = DBO().list_organization_structure()
+
+
+def filter(TaskID, Scanner, Filter, TemplateFile, OutputFileName):
 	if not OutputFileName:
 		OutputFileName = TaskID
 	outFile = OutputFileName + ".xlsx"
+	
+	wb = load_workbook(TemplateFile)
+	sheet = wb.active
+	
 	headers = []
 	for c in sheet.columns:
 		headers.append(c[0].value)
 		c[0].value = ""  # delete for quickly # empty headers, can't remove line use openpyxl
-	# todo : more details
-	'''
-	整体修改：
-		部门名称、应用系统名称、主机信息
-	'''
-	i = 0  # auto line number
-	condition = 'n.等级<>"None" and not n.解决办法 =~ ".*可以不做?修复.*" and n.解决办法 <>""'
+	condition = Filters[Filter]
+	
 	if Scanner:
-		condition = 'n.Scanner="%s" and n.等级<>"None" and not n.解决办法 =~ ".*可以不做?修复.*" and n.解决办法 <>""' % Scanner
+		condition += ' and n.Scanner="%s"' % Scanner
+	
 	for v in DBO().enum_vul(TaskID, condition):
 		line = []
-		i += 1
+		# org_info = DBO().list_organization_structure(HostIP=v["IP"])[0]
+		# v.update(org_info)
 		for c in headers:
 			line.append(v[c])
-		line[0] += str(i).zfill(5)
 		sheet.append(line)
-	
+	# auto line number
+	if "TaskID" in headers:  # template may done have a TaskID
+		c = headers.index("TaskID")
+		i = 1
+		for r in range(2, sheet.max_row):
+			value = sheet.cell(column=c + 1, row=r + 1).value
+			sheet.cell(column=c + 1, row=r + 1, value=value + str(i).zfill(5))
+			i += 1
 	# remove template data
 	wb.remove(wb.get_sheet_by_name("Headers"))
 	wb.save(outFile)
@@ -43,26 +57,37 @@ def template_tj(TaskID, Scanner, OutputFileName):
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='''
-    Export template data to file.
-    ''', formatter_class=RawTextHelpFormatter)
+    Export vulnerabilities data to user defined template file.
+    1, Use key in '-c options' output, to make a template file,such as template_default.xlsx
+    2, Use some filter supported to query data
+    ''', formatter_class=RawTextHelpFormatter, version="1.0")
 	parser.add_argument("-c", dest="Columns", action='store_true',
 	                    help="Print support data key, Use in excel Columns for user defined template.")
 	parser.add_argument("-t", dest="TaskID", type=str,
 	                    help="Unique TaskID for identify task and export.")
-	# further todo:add more:department\app
 	parser.add_argument("-s", dest="Scanner", type=str, choices=["nessus", "nsfocus"],
 	                    help="Select one scanner results.")
-	parser.add_argument("-p", dest="Template", type=str, choices=["tj"],
-	                    help="Export some data to predefine templates")
+	# parser.add_argument("-p", dest="Project", type=str, choices=set([p[0] for p in org_structure]),
+	#                     help="Select on Project results.")
+	# parser.add_argument("-d", dest="Department", type=str, choices=set([p[1] for p in org_structure]),
+	#                     help="Select one Department results.")
+	# parser.add_argument("-a", dest="Application", type=str, choices=set([p[2] for p in org_structure]),
+	#                     help="Select one Application results.")
+	parser.add_argument("-f", dest="Filter", type=str, choices=Filters.keys(), default="default",
+	                    help="Filter some Data when query, Default filter vulnerabilities with risk. All will return all vulnerabilities")
+	parser.add_argument("-m", dest="TemplateFile", type=file, default="template_default.xlsx",
+	                    help="Export data to user predefined template file")
 	parser.add_argument("-o", dest="OutputFileName", type=str,
-	                    help="File Name to store")
+	                    help="Store to Excel filename.")
 	
 	args = parser.parse_args()
-	if args.Columns:
+	if args.TaskID and args.Filter and args.TemplateFile:
+		filter(args.TaskID, args.Scanner, args.Filter, args.TemplateFile, args.OutputFileName)
+	elif args.Columns:
 		cols = MetaData().data.keys()
+		[cols.append(x) for x in ["Project", "Department", "Application"]]
 		cols.sort()
 		for i in cols:
 			print i
-	if args.Template == "tj":
-		template_tj(args.TaskID, args.Scanner, args.OutputFileName)
-	# print "==== Save to file %s."%(args.FileName+".xlsx")
+	else:
+		parser.print_usage()
