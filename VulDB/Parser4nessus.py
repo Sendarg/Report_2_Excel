@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# version 0.1 update by le @ 2017.7.6
+# version 1.1 update by le @ 2017.7.6
 
 import xmltodict
 from db import MetaData,DBO

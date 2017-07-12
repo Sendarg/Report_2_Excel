@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# version 0.1 update by le @ 2017.7.6
+# version 1.1 update by le @ 2017.7.6
 
 from py2neo import Graph, Node, Relationship, NodeSelector
-
 
 class MetaData(object):
 	def __init__(self):
@@ -63,7 +62,6 @@ class MetaData(object):
 			u"误报": "",  # 常见经验:是不是误报
 			u"误报类型": "",  # 常见误报:oracle:\ssh:\ add further
 			u"误报原因": "",  # 版本错误，识别错误等
-			
 		}
 
 
@@ -82,11 +80,6 @@ class DBO(object):
 		return self.graph.data(cypher)
 	
 	def enum_vul(self, TaskID, Cypher_Conditions=None):
-		""" enum vul by condition.
-        :param labels: node labels to match
-        :param condition: .where("_.name =~ 'J.*'", "1960 <= _.born < 1970"); "_.Port='%s'"
-        :return: :py:list
-        """
 		if Cypher_Conditions:
 			# selector.select.where not good for use , not support zh_cn just pure cypher
 			cypher = 'MATCH (n:HostVul) where n.TaskID="%s" %s RETURN n ' % (TaskID, Cypher_Conditions)
@@ -99,17 +92,13 @@ class DBO(object):
 				yield data
 	
 	def add_vul(self, Vul_Data):
-		# uniq = Vul_Data[u"IP"] + "^^^" + Vul_Data[u"Port"] + "^^^" + Vul_Data[u"ID"]
-		# if not self.HostVul_exists(Vul_Data):
 		if not self.HostVul_exists(Vul_Data):
 			Host = self.graph.find_one("Host", "IP", Vul_Data[u"IP"])
 			vul = Node("HostVul")
 			vul.update(Vul_Data)
 			rel = Relationship(Host, "have", vul)
 			self.graph.create(rel)
-		# print "Created\t%s" % uniq
 		else:
-			# print "Exists\t%s" % uniq
 			pass
 	
 	def HostVul_exists(self, Vul_Data):
@@ -123,10 +112,7 @@ class DBO(object):
 		# 性能太差，使用其他简单方法
 		# selector = NodeSelector(self.graph)
 		# selected = selector.select("HostVul",
-		#                            TaskID=Vul_Data[u"TaskID"],
-		#                            Scanner=Vul_Data[u"Scanner"],
 		#                            IP=Vul_Data[u"IP"],
-		#                            Port=Vul_Data[u"Port"],
 		#                            ID=Vul_Data[u"ID"]).limit(1)
 		# .where("_.IP = '%s'" % Vul_Data[u"IP"],
 		#                                        "_.Port='%s'" % Vul_Data[u"Port"],
@@ -197,45 +183,3 @@ class DBO(object):
 			rel = Relationship(start_node, rel_type, end_node)
 			self.graph.create(rel)
 			return 1
-	
-	##############
-	
-	
-	def modify_node(self, req, label=None):
-		REQ = self.graph.find_one(label, property_key="name", property_value=req['name'])
-		if REQ:
-			REQ.update(req)
-			self.graph.push(REQ)
-	
-	def get_node_by_name(self, name, label=None):
-		REQ = self.graph.find_one(label, property_key="name", property_value=name)
-		if REQ:
-			return REQ
-	
-	def get_label_by_node(self, node):
-		label = []
-		for i in node.labels():
-			label.append(i)
-		return label
-	
-	def get_relationship_by_node(self, rel=None, start_node=None, end_node=None):
-		relation = self.graph.match_one(start_node=start_node, rel_type=rel, end_node=end_node)
-		return relation
-	
-	def delete_relationship_by_node(self, rel=None, start_node=None, end_node=None):
-		relation = self.graph.match_one(start_node=start_node, rel_type=rel, end_node=end_node)
-		self.graph.delete(relation)
-	
-	def delete_node_by_name(self, name, label=None):
-		REQ = self.graph.find_one(label, property_key="name", property_value=name)
-		self.graph.delete(REQ)
-	
-	def add_relationship_by_node(self, a, relationship, b):
-		new = Relationship(a, relationship, b)
-		self.graph.create(new)
-	
-	def remove_properity_by_name(self, NodeName, PropName, label=None):
-		n = self.graph.find_one(label, property_key="name", property_value=NodeName)
-		n["%s" % PropName] = None
-		n.update(n)
-		n.push()

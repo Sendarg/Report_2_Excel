@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# version 0.1 update by le @ 2017.7.6
+# version 1.1 update by le @ 2017.7.6
 
 import glob, urllib2
 import os.path as P
@@ -28,15 +28,12 @@ def GetNsfocusVulDetails(Application,SingleTaskPath):
 		IPfile = P.basename(iphtml)
 		# if it is ip.html file
 		if IPfile.count('.') == 4:
-			# ippath=P.join(taskpath,iphtml)
 			IP = IPfile[:-5]
-			#
 			DBO().add_host(Application,IP)
 			## get html content
 			content = urllib2.urlopen(url="file:" + iphtml).read()
 			html = H.fromstring(content.decode('utf-8'))
 			## todo:get more data from html
-			# VulTable = html.xpath('//*[@id="vul_detail"]/table/tr')
 			vul_trs = html.xpath('//*[@id="vul_detail"]/table/tr')
 			count = len(vul_trs) / 2
 			for l in range(count):

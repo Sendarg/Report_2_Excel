@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# version 1.0 update by le @ 2017.7.6
+# version 1.1 update by le @ 2017.7.6
 
 from db import DBO
 
@@ -12,6 +12,7 @@ Rules[u"Oracle"] = [
 Rules[u"MySQL"] = [u' v.漏洞名称 =~ "^MySQL.*漏洞.*" or v.漏洞名称 =~ "^Oracle MySQL.*漏洞.*" ', u"不精确的版本判断", '']
 Rules[u"OpenSSH"] = [u' lower(v.漏洞名称) =~ "^openssh.*漏洞.*" ', u"不精确的版本判断", '']
 Rules[u"IBM"] = [u' v.漏洞名称 = "IBM AIX TCP Large Send Denial of Service Vulnerability" ', u"不支持识别厂家补丁版本", '']
+Rules[u"绿盟"] = [u' not v.解决办法 =~ ".*可以不做?修复.*" ', u"不影响业务的建议", '']
 
 
 def mark_false():

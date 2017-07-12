@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# version 0.1 update by le @ 2017.7.6
+# version 1.1 update by le @ 2017.7.6
 
 from argparse import RawTextHelpFormatter
 from Parser4nsfocus import GetNsfocusVulDetails
@@ -11,15 +11,12 @@ import zipfile, tempfile, argparse, shutil
 
 def import_nsfoucs(ReportFiles, TaskID, Project, Department, Application):
 	dbo = DBO()
-	# dbo.graph.delete_all()
-	# dbo.add_department(Project, Department)
 	dbo.add_app(Project, Department,Application)
 	for zip in ReportFiles:
 		if zipfile.is_zipfile(zip):
 			print "[ Working on\t %s ]" % zip.name
 			tmp = tempfile.mkdtemp(".tmp", "nsfocus_")  # 创建唯一的临时文件，避免冲突
 			zipfile.ZipFile(zip).extractall(path=tmp)
-			# taskpath = os.path.abspath(dir)
 			for data in GetNsfocusVulDetails(Application,tmp):
 				# add more meta info
 				data[u"TaskID"] = TaskID.strip()
@@ -33,11 +30,9 @@ def import_nsfoucs(ReportFiles, TaskID, Project, Department, Application):
 
 def import_nessus(ReportFiles, TaskID, Project, Department, Application):
 	dbo = DBO()
-	# dbo.graph.delete_all()
 	dbo.add_app(Project, Department, Application)
 	for xml in ReportFiles:
 		print "[ Working on\t %s ]" % xml.name
-		# taskpath = os.path.abspath(dir)
 		for data in GetNessusVulDetails(Application, xml):
 			# add more meta info
 			data[u"TaskID"] = TaskID.strip()
