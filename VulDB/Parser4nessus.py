@@ -4,7 +4,7 @@
 
 import xmltodict
 from db import MetaData,DBO
-import gevent
+# todo:change to lxml&PyQuery xml2dict too slow
 from  gevent.pool import Pool
 from gevent import monkey
 
@@ -34,7 +34,9 @@ def process_host(host):
 	DBO().add_host(APPLICATION, host["@name"])
 	items = host["ReportItem"]
 	if type(items) != list:
-		items = [].append(items)
+		one=[]
+		one.append(items)
+		items = one
 	for item in items:
 		data = MetaData().data
 		
