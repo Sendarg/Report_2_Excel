@@ -6,39 +6,24 @@ from argparse import RawTextHelpFormatter
 from Parser4nsfocus import GetNsfocusVulDetails
 from Parser4nessus import GetNessusVulDetails
 from db import DBO
-import zipfile, tempfile, argparse, shutil
+import zipfile, argparse
 
 
 def import_nsfoucs(ReportFiles, TaskID, Project, Department, Application):
-	dbo = DBO()
-	dbo.add_app(Project, Department,Application)
+	DBO().add_app(Project, Department,Application)
 	for zip in ReportFiles:
 		if zipfile.is_zipfile(zip):
 			print "[ Working on\t %s ]" % zip.name
-			tmp = tempfile.mkdtemp(".tmp", "nsfocus_")  # 创建唯一的临时文件，避免冲突
-			zipfile.ZipFile(zip).extractall(path=tmp)
-			for data in GetNsfocusVulDetails(Application,tmp):
-				# add more meta info
-				data[u"TaskID"] = TaskID.strip()
-				data[u"Scanner"] = "nsfocus"
-				# store data
-				dbo.add_vul(data)
+			GetNsfocusVulDetails(TaskID,Application,zip)
 			print "nsfocus Report done:\t%s" % zip.name
-			shutil.rmtree(tmp)
 	print "[ Store complete! ]"
 
 
 def import_nessus(ReportFiles, TaskID, Project, Department, Application):
-	dbo = DBO()
-	dbo.add_app(Project, Department, Application)
+	DBO().add_app(Project, Department, Application)
 	for xml in ReportFiles:
 		print "[ Working on\t %s ]" % xml.name
-		for data in GetNessusVulDetails(Application, xml):
-			# add more meta info
-			data[u"TaskID"] = TaskID.strip()
-			data[u"Scanner"] = "nessus"
-			# store data
-			dbo.add_vul(data)
+		GetNessusVulDetails(TaskID,Application, xml)
 		print "nessus Report done:\t%s" % xml.name
 	print "[ Store complete! ]"
 

@@ -4,6 +4,7 @@
 
 from py2neo import Graph, Node, Relationship, NodeSelector
 
+
 class MetaData(object):
 	def __init__(self):
 		self.data = {
@@ -98,8 +99,6 @@ class DBO(object):
 			vul.update(Vul_Data)
 			rel = Relationship(Host, "have", vul)
 			self.graph.create(rel)
-		else:
-			pass
 	
 	def HostVul_exists(self, Vul_Data):
 		cypher = "Match (n:HostVul) where n.TaskID='%s' and n.Scanner='%s' and n.IP='%s' and n.Port='%s' and n.ID='%s' return n.IP limit 1 " % (
