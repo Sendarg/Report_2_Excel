@@ -12,7 +12,7 @@ Rules[u"Oracle"] = [
 Rules[u"MySQL"] = [u' v.漏洞名称 =~ "^MySQL.*漏洞.*" or v.漏洞名称 =~ "^Oracle MySQL.*漏洞.*" ', u"不精确的版本判断", '']
 Rules[u"OpenSSH"] = [u' lower(v.漏洞名称) =~ "^openssh.*漏洞.*" ', u"不精确的版本判断", '']
 Rules[u"IBM"] = [u' v.漏洞名称 = "IBM AIX TCP Large Send Denial of Service Vulnerability" ', u"不支持识别厂家补丁版本", '']
-Rules[u"绿盟"] = [u' not v.解决办法 =~ ".*可以不做?修复.*" ', u"不影响业务的建议", '']
+Rules[u"绿盟"] = [u' v.解决办法 =~ ".*可以不做?修复.*" ', u"不影响业务的建议", '']
 
 
 def mark_false():
@@ -23,7 +23,7 @@ def mark_false():
 		
 		run = DBO().graph.run(cypher)
 		num = run.stats()['properties_set']
-		print "+ Marked Oracle:\t%s" % num
+		print "+ Marked %s:\t%s" %(r[0],num)
 	print "== Mark Complated!"
 
 

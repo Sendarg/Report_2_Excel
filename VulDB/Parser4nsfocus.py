@@ -15,7 +15,7 @@ import tempfile, zipfile, shutil
 
 
 def GetNsfocusVulDetails(TaskID, Application, SingleZipPath):
-	global APPLICATION, TASKID, taskname, taskdate # global only use in function
+	global APPLICATION, TASKID, taskname, taskdate, rsas_version  # global only use in function
 	
 	TASKID = TaskID.strip()
 	APPLICATION = Application
@@ -31,17 +31,18 @@ def GetNsfocusVulDetails(TaskID, Application, SingleZipPath):
 		iphtmls = glob.glob(tmpTask + '/host/*.*.*.*.html')
 	
 	# get scanner task info
-	index = glob.glob(tmpTask + '/index.html')[0]
-	taskname = linecache.getline(index, 43).strip()[4:-5]
-	taskdate = linecache.getline(index, 76).strip()[9:-6]
+	index_HTML = glob.glob(tmpTask + '/index.html')[0]
+	taskname = linecache.getline(index_HTML, 43).strip()[4:-5]
+	taskdate = linecache.getline(index_HTML, 76).strip()[9:-6]
+	rsas_version = linecache.getline(index_HTML, 89).strip()[4:-5]
 	
-	# gevent
 	pool = Pool(size=8)
-	threads=[pool.spawn(process_iphtml, iphtml) for iphtml in iphtmls]
+	[pool.spawn(process_iphtml, iphtml) for iphtml in iphtmls]
 	pool.join()
-	
+
 	# clean up
 	shutil.rmtree(tmpTask)
+
 
 def process_iphtml(iphtml):
 	IPfile = P.basename(iphtml)
@@ -81,7 +82,13 @@ def process_iphtml(iphtml):
 			data[u"端口返回"] = get_br_text(PortReturn[0])
 		else:
 			data[u"端口返回"] = ""
-		PortInfo = html.xpath('//*[@data-id="%s"]/../../../../../td' % data["vulid"])
+		
+		## version diff
+		if rsas_version == "V6.0R02F03SP02":  # some different
+			PortXpath = '//*[@data-id="%s"]/../../../../td' % data["vulid"]
+		else:  # V6.0R02F03
+			PortXpath = '//*[@data-id="%s"]/../../../../../td' % data["vulid"]
+		PortInfo = html.xpath(PortXpath)
 		data[u"Port"] = PortInfo[0].text
 		data[u"协议"] = PortInfo[1].text
 		data[u"服务"] = PortInfo[2].text
@@ -92,8 +99,13 @@ def process_iphtml(iphtml):
 		for tr in vul_table:
 			th = tr.xpath('./th')[0].text
 			td = tr.xpath('./td')[0]
-			# print IP, th
 			table[th] = get_pure_text(td)
+			
+			# ## debug td NoneType
+			# try:
+			# 	table[th] = get_pure_text(td)
+			# except AttributeError:
+			# 	print data[u"IP"], data[u"漏洞名称"], th
 		
 		data.update(table)
 		# some replace fix
@@ -110,8 +122,8 @@ def process_iphtml(iphtml):
 		
 		# store data
 		DBO().add_vul(data)
-		print "IP:\t%s is done" % P.basename(iphtml)
-
+	print "IP:\t%s is done" % P.basename(iphtml)
+	
 
 def get_pure_text(xpathElement):
 	# get text from td , remove other html label
@@ -123,6 +135,8 @@ def get_pure_text(xpathElement):
 			if br.tail.strip():  # not add empty line
 				text += "\n" + br.tail.strip()
 	else:
+		if not xpathElement: # sometimes is null
+			return ""
 		text = xpathElement.text.strip()
 	return text
 
