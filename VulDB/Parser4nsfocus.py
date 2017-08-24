@@ -135,7 +135,7 @@ def get_pure_text(xpathElement):
 			if br.tail.strip():  # not add empty line
 				text += "\n" + br.tail.strip()
 	else:
-		if not xpathElement: # sometimes is null
+		if xpathElement is None: # sometimes is null
 			return ""
 		text = xpathElement.text.strip()
 	return text
